@@ -55,8 +55,8 @@ If you want to compile the code yourself, the project uses **CMake** for a clean
 **Steps:**
 1. Clone the repository:
    ```bash
-   git clone [https://github.com/yourusername/](https://github.com/yourusername/)"Unicode Symbols Browser".git
-   cd "Unicode Symbols Browser"
+   git clone https://github.com/Ra1z3n00/Unicode-Symbols-Browser-2.git
+   cd "Unicode Symbols Browser 2"
    ```
 
 2. Create a build directory and configure the project:
