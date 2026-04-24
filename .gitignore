@@ -1,0 +1,31 @@
+# Cartelle di compilazione CMake (FONDAMENTALE)
+build/
+build_win/
+build_linux/
+
+# File eseguibili e binari (nel caso finiscano per sbaglio fuori dalle cartelle build)
+*.exe
+*.out
+*.app
+*.o
+*.obj
+*.a
+*.lib
+*.dll
+*.so
+
+# File generati da CMake (se lanciato per sbaglio nella cartella principale)
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+compile_commands.json
+
+# File spazzatura dei Sistemi Operativi
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# File di configurazione degli Editor (opzionale ma consigliato)
+.vscode/
+.vs/

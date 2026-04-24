@@ -1,0 +1,4 @@
+// build: windres resources.rc -o usb.o
+
+
+id ICON "usb.ico"
