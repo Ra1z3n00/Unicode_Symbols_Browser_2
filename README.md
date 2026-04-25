@@ -86,7 +86,7 @@ Fonts: The app requires NotoSansMath-Regular.ttf to be in the same folder as the
 
 ## 🖼️ Screenshots
 <p align="center">
-<img width="500" height="600" alt="Image" src="https://github.com/user-attachments/assets/1eae56f5-101e-41ac-8b47-ebb45d874568" />
+<img width="400" height="500" alt="Image" src="https://github.com/user-attachments/assets/1eae56f5-101e-41ac-8b47-ebb45d874568" />
 </p>
 
 ---
