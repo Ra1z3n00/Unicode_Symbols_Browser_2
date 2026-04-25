@@ -80,8 +80,8 @@ void App::Run() {
 
 void App::LoadAssets() {
     // 1. Caricamento Icona Finestra (opzionale, se esiste il file)
-    if (FileExists("usb.png")) {
-        Image icon = LoadImage("usb.png");
+    if (FileExists("resource\\usb.png")) {
+        Image icon = LoadImage("resource\\usb.png");
         SetWindowIcon(icon);
         UnloadImage(icon);
     }
@@ -115,8 +115,8 @@ void App::LoadAssets() {
 
     // --- CARICAMENTO FONT INTERFACCIA (Testi piccoli, Nomi, ecc) ---
     const char* uiFontPaths[] = {
-        "fonts\\NotoSans-Italic.ttf",
-        "fonts\\NotoSansMath-Regular.ttf",
+        "resouce\\NotoSans-Italic.ttf",
+        "resource\\NotoSansMath-Regular.ttf",
     };
 
     for (const char* path : uiFontPaths) {
@@ -130,7 +130,7 @@ void App::LoadAssets() {
 
     // --- CARICAMENTO FONT SIMBOLI (Testi grandi, Icone) ---
     const char* symFontPaths[] = {
-        "fonts\\NotoSansMath-Regular.ttf",                            
+        "resource\\NotoSansMath-Regular.ttf",                            
     };
 
     for (const char* path : symFontPaths) {

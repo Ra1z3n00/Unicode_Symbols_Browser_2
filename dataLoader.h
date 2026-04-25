@@ -81,7 +81,7 @@ inline vector<Symbol> buildDatabase() {
     vector<Symbol> out;
     
     // 1. Apriamo il file (assicurati che si chiami così e sia nella cartella giusta)
-    ifstream file("database.csv");
+    ifstream file("resource\\database.csv");
     
     // 2. Controllo errori: se il file non esiste, restituiamo una lista vuota
     if (!file.is_open()) {

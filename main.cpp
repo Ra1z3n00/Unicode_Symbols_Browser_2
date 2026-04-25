@@ -6,11 +6,17 @@
     g++ main.cpp App.cpp PlatformUtils_Linux.cpp -o "Unicode Symbols Browser" -std=c++17 -O2 -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 
     CMAKE build:
-        Windows:    cmake -G "MinGW Makefiles" ..
-                    cmake --build .
+        Windows:    
+                cmake ..
+                    or
+                cmake -G "MinGW Makefiles" ..
 
-        Linux: cmake ..
-    */
+                cmake --build .
+                    
+        Linux: 
+                cmake ..
+                cmake --build .
+*/
 
 #include "App.h"
 

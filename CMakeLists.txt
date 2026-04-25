@@ -50,10 +50,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "Unicode Symbols Br
 # file(COPY "ui_font.ttf" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 # file(COPY "Unicode Symbols Browser.png" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-# --- GESTIONE ASSET (Font e Icone) ---
-# Copia font e icone nella cartella di build
-file(COPY 
-    "NotoSansMath-Regular.ttf" 
-    "usb.png" 
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-)
+# Copia l'intera cartella risorse nella cartella dove viene creato l'eseguibile
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/resource" 
+     DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
