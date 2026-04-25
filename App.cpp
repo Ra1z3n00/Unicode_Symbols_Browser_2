@@ -1,7 +1,7 @@
-// App.cpp
 #include "App.h"
-#include "PlatformUtils.h" // Includiamo il nostro nuovo strumento di copia!
+#include "PlatformUtils.h"
 #include <iostream>
+#include <algorithm>
 
 App::App() {
     // Stato Ricerca
@@ -11,10 +11,11 @@ App::App() {
     
     // Stato Navigazione e Finestra
     selectedIndex = 0;
-    scrollOffset = 0;  // Corretto a int (prima era 0.0f)
+    scrollOffset = 0;
     isGridView = false;
     isAlwaysOnTop = false;
     isTransparent = false;
+    isEnglishMode = false;
     
     // Timer e Feedback
     moveTimer = 0.0f;
@@ -25,6 +26,34 @@ App::App() {
     useDefaultFont = true;
     useDefaultUiFont = true;
     allSymbols = buildDatabase();
+
+    // --- FILTRI DINAMICI ---
+    currentCategory = "All";
+    categories.clear();
+    categories.push_back("All"); // Il bottone "All" deve esserci sempre e per primo!
+
+    std::vector<std::string> uniqueCategories;
+
+    // Raccogliamo tutte le categorie uniche leggendole dai simboli
+    for (const auto& sym : allSymbols) {
+        // Ignoriamo le categorie vuote per sicurezza
+        if (sym.category.empty()) continue; 
+
+        // Se la categoria non è ancora nella nostra lista temporanea, la aggiungiamo
+        if (std::find(uniqueCategories.begin(), uniqueCategories.end(), sym.category) == uniqueCategories.end()) {
+            uniqueCategories.push_back(sym.category);
+        }
+    }
+
+    // Ordiniamo i bottoni in ordine alfabetico (opzionale ma molto elegante)
+    std::sort(uniqueCategories.begin(), uniqueCategories.end());
+
+    // Aggiungiamo le categorie trovate alla lista ufficiale dei bottoni
+    for (const auto& cat : uniqueCategories) {
+        categories.push_back(cat);
+    }
+
+    currentSymbols = allSymbols;
 }
 
 App::~App() {
@@ -36,7 +65,7 @@ App::~App() {
 }
 
 void App::Run() {
-    InitWindow(screenWidth, screenHeight, "Unicode Symbols Browser");
+    InitWindow(screenWidth, screenHeight, "Unicode Symbols Browser 2.0");
     SetTargetFPS(60);
 
     LoadAssets();
@@ -72,7 +101,6 @@ void App::LoadAssets() {
     
     // Aggiungiamo i codici dei nostri simboli speciali
     for (const auto& s : allSymbols) {
-        // hexToUInt è la funzione che avevi già in database.h
         unsigned int val = hexToUInt(s.hex); 
         if (val > 0) uniqueCodepoints.insert((int)val);
     }
@@ -87,7 +115,8 @@ void App::LoadAssets() {
 
     // --- CARICAMENTO FONT INTERFACCIA (Testi piccoli, Nomi, ecc) ---
     const char* uiFontPaths[] = {
-        "NotoSansMath-Regular.ttf",                                // 1. Cerca nella cartella del programma
+        "fonts\\NotoSans-Italic.ttf",
+        "fonts\\NotoSansMath-Regular.ttf",
     };
 
     for (const char* path : uiFontPaths) {
@@ -95,13 +124,13 @@ void App::LoadAssets() {
             uiFont = LoadFontEx(path, 36, codepoints, codepointCount);
             SetTextureFilter(uiFont.texture, TEXTURE_FILTER_BILINEAR); // Anti-aliasing
             useDefaultUiFont = false;
-            break; // Font trovato, smetti di cercare!
+            break;
         }
     }
 
     // --- CARICAMENTO FONT SIMBOLI (Testi grandi, Icone) ---
     const char* symFontPaths[] = {
-        "NotoSansMath-Regular.ttf",                                    // 1. Cerca nella cartella del programma
+        "fonts\\NotoSansMath-Regular.ttf",                            
     };
 
     for (const char* path : symFontPaths) {
@@ -109,11 +138,10 @@ void App::LoadAssets() {
             customFont = LoadFontEx(path, 60, codepoints, codepointCount);
             SetTextureFilter(customFont.texture, TEXTURE_FILTER_BILINEAR);
             useDefaultFont = false;
-            break; // Font trovato, smetti di cercare!
+            break;
         }
     }
 
-    // Puliamo la memoria temporanea dell'array
     delete[] codepoints; 
 }
 
@@ -129,18 +157,35 @@ void App::Update() {
     int itemHeight = isGridView ? (cellSize + cellSpacing) : rowHeightList;
     visibleLines = listAreaHeight / itemHeight;
 
-    // 2. Tasti di visualizzazione (TAB, F5, F6)
-    if (IsKeyPressed(KEY_TAB)) isGridView = !isGridView;
+    // 2. Tasti di visualizzazione (TAB, F5, F6, F7)
+    if (IsKeyPressed(KEY_TAB)) {
+        isGridView = !isGridView;
+        
+        // --- FIX GRIGLIA: Riallinea lo scroll quando cambiamo vista ---
+        int fullItemSize = cellSize + cellSpacing;
+        int availableWidth = screenWidth - (padding * 2); 
+        int newCols = isGridView ? ((availableWidth + cellSpacing) / fullItemSize) : 1;
+        if (newCols < 1) newCols = 1;
+        
+        scrollOffset = (selectedIndex / newCols) * newCols; 
+    }
 
+    // setta l'app fissa sopra le altre
     if (IsKeyPressed(KEY_F5)) {
         isAlwaysOnTop = !isAlwaysOnTop;
         if (isAlwaysOnTop) SetWindowState(FLAG_WINDOW_TOPMOST);
         else ClearWindowState(FLAG_WINDOW_TOPMOST);
     }
 
+    // rende l'app trasparente
     if (IsKeyPressed(KEY_F6)) {
         isTransparent = !isTransparent;
         SetWindowOpacity(isTransparent ? 0.85f : 1.0f); 
+    }
+
+    // Cambia la lingua della descrizione
+    if (IsKeyPressed(KEY_F7)) {
+        isEnglishMode = !isEnglishMode;
     }
 
     // 3. Logica della Barra di Ricerca
@@ -151,17 +196,8 @@ void App::Update() {
             searchBuffer[searchLen + 1] = '\0';
             searchLen++;
             searchQuery = searchBuffer;
-            
-            currentSymbols.clear();
-            for (const auto &s : allSymbols) {
-                if (containsCaseInsensitive(s.name, searchQuery) || 
-                    containsCaseInsensitive(s.keywords, searchQuery) || 
-                    containsCaseInsensitive(s.hex, searchQuery)) {
-                    currentSymbols.push_back(s);
-                }
-            }
-            scrollOffset = 0; 
-            selectedIndex = 0;
+
+            FilterSymbols(); 
         }
         key = GetCharPressed();
     }
@@ -171,38 +207,20 @@ void App::Update() {
             searchLen--; 
             searchBuffer[searchLen] = '\0';
             searchQuery = searchBuffer;
-            
-            if (searchQuery.empty()) {
-                currentSymbols = allSymbols;
-            } else {
-                currentSymbols.clear();
-                for (const auto &s : allSymbols) {
-                    if (containsCaseInsensitive(s.name, searchQuery) || 
-                        containsCaseInsensitive(s.keywords, searchQuery) || 
-                        containsCaseInsensitive(s.hex, searchQuery)) {
-                        currentSymbols.push_back(s);
-                    }
-                }
-            }
-            scrollOffset = 0; 
-            selectedIndex = 0;
+
+            FilterSymbols();
         }
     }
 
     // Pulizia totale della ricerca con il tasto CANC (DELETE)
     if (IsKeyPressed(KEY_DELETE)) {
         if (searchLen > 0) {
-            // 1. Svuotiamo la barra di testo
+            // Svuotiamo la barra di testo
             searchLen = 0; 
             searchBuffer[0] = '\0';
             searchQuery = "";
             
-            // 2. Ripristiniamo la lista mostrando tutti i simboli
-            currentSymbols = allSymbols;
-            
-            // 3. Riportiamo lo scroll e la selezione in cima
-            scrollOffset = 0; 
-            selectedIndex = 0;
+            FilterSymbols(); // Applica il reset, mantenendo attiva la categoria in cui mi trovo
         }
     }
 
@@ -286,7 +304,6 @@ void App::ExecuteCopy(int mode) {
             lastCopyAction = "Inserito: ";
             actionTriggered = true;
             
-            // Usiamo la nostra nuova libreria di astrazione per il SO!
             Platform::AutoPaste(); 
             break;
             
@@ -327,20 +344,28 @@ void App::Draw() {
     DrawRectangle(0, 0, screenWidth, headerHeight, LIGHTGRAY);
     DrawRectangleLines(0, 0, screenWidth, headerHeight, GRAY);
     
-    float searchY = (headerHeight - 50) / 2.0f;
-    DrawText("Cerca:", padding, searchY + 5, 22, DARKGRAY);
+    float searchY = (headerHeight - 75) / 2.0f;
+
+    if (!useDefaultUiFont) {
+        // Usiamo il font caricato per una qualità perfetta
+        DrawTextEx(uiFont, "Cerca:", { (float)padding, (float)searchY + (-2) }, 35, 0, DARKGRAY);
+    } else {
+        // Fallback se il font non viene trovato
+        DrawText("Cerca:", padding, searchY + 5, 20, DARKGRAY);
+    }
     
     int btnSize = 30; 
     int gap = 10; 
     int moveLeft = 0; 
     float iconsWidth = 80 + moveLeft; 
-    Rectangle searchBox = {90, searchY, (float)(screenWidth - 100 - iconsWidth), 30};
+    Rectangle searchBox = {90, searchY, (float)(screenWidth - 110 - iconsWidth), 30};
     DrawRectangleRec(searchBox, WHITE);
     DrawRectangleLinesEx(searchBox, 1, DARKGRAY);
     DrawText(searchBuffer, (int)searchBox.x + 5, (int)searchBox.y + 5, 20, BLACK);
 
     float gridBtnX = (screenWidth - padding - btnSize) - moveLeft;
     float listBtnX = gridBtnX - btnSize - gap;
+    
     Rectangle listRect = { listBtnX, searchY + 2, (float)btnSize, (float)btnSize };
     Rectangle gridRect = { gridBtnX, searchY + 2, (float)btnSize, (float)btnSize };
     
@@ -363,104 +388,162 @@ void App::Draw() {
     DrawRectangle(gridRect.x+1, gridRect.y+15, 10, 10, colGrid);  
     DrawRectangle(gridRect.x+15, gridRect.y+15, 10, 10, colGrid); 
 
-    // Indicatori di stato (F5/F6/TAB)
-    if (isAlwaysOnTop) DrawText("TOP", screenWidth - 145, searchY + 5, 10, MAROON);
-    if (isTransparent) DrawText("TRN", screenWidth - 120, searchY + 5, 10, DARKPURPLE);
+    // Indicatori di stato (F5/F6/F7/TAB)
+    if (isAlwaysOnTop) DrawText("TOP", screenWidth - 180, searchY + 5, 10, MAROON);
+    if (isTransparent) DrawText("TRN", screenWidth - 153, searchY + 5, 10, DARKPURPLE);
+
+    std::string langLabel = (isEnglishMode) ? "ENG" : "ITA";
+    DrawText(langLabel.c_str(), screenWidth - 125, searchY + 5, 10, GREEN);
     DrawText("(TAB)", listBtnX + 15, searchY + 32, 10, BLUE);
 
-    if (!isGridView) {
-        int yHeaderTxt = headerHeight - 25; 
-        DrawText("Simbolo", padding, yHeaderTxt, 22, DARKGRAY);
-        DrawText("Codice", 100, yHeaderTxt, 22, DARKGRAY);
-        DrawText("Nome", 200, yHeaderTxt, 22, DARKGRAY);
+    int tabX = 15;
+    bool isHoveringAnyTab = false;
+    float tabFontSize = 24.0f;
+    for (const auto& cat : categories) {
+       // 1. Misuriamo la larghezza usando la variabile
+        float textWidth = MeasureTextEx(uiFont, cat.c_str(), tabFontSize, 0).x;
+        
+        // Il bottone si adatta automaticamente alla nuova larghezza calcolata
+        Rectangle btnRec = { (float)tabX, 58, textWidth + 24, 34 }; 
+        
+        bool isSelected = (currentCategory == cat);
+        
+        DrawRectangleRounded(btnRec, 0.3f, 6, isSelected ? BLUE : LIGHTGRAY);
+        
+        // --- CALCOLO DEL CENTRO PERFETTO ---
+        float exactTextX = btnRec.x + ((btnRec.width - textWidth) / 2.0f);
+        // 2. Calcoliamo la Y usando la variabile
+        float exactTextY = btnRec.y + ((btnRec.height - tabFontSize) / 2.0f); 
+        
+        // 3. Disegniamo il testo usando la variabile
+        DrawTextEx(uiFont, cat.c_str(), { exactTextX, exactTextY }, tabFontSize, 0, isSelected ? WHITE : DARKGRAY);
+
+        // Gestione Clic Mouse
+        if (CheckCollisionPointRec(GetMousePosition(), btnRec)) {
+            isHoveringAnyTab = true; 
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                currentCategory = cat;
+                FilterSymbols();
+            }
+        }
+
+        tabX += (int)btnRec.width + 10; 
+    }
+
+    if (isHoveringAnyTab) {
+        SetMouseCursor(MOUSE_CURSOR_POINTING_HAND);
+    } else {
+        SetMouseCursor(MOUSE_CURSOR_DEFAULT);
     }
 
     // --- 2. CONTENUTO CENTRALE (Lista o Griglia) ---
     int listAreaHeight = screenHeight - headerHeight - footerHeight;
-    BeginScissorMode(0, headerHeight, screenWidth, listAreaHeight);
+    DrawRectangle(0, headerHeight, screenWidth, screenHeight - headerHeight - footerHeight, { 245, 245, 245, 255 });
+    BeginScissorMode(0, headerHeight, screenWidth, screenHeight - headerHeight - footerHeight);
     
-    Color colSelBg = {0, 100, 200, 255}; 
-    Color colSelTx = WHITE; 
-    Color colTxt = {40, 40, 40, 255};    
-    Color colHoverBg = {235, 245, 255, 255};
-    float listSymbolSize = 38.0f; 
-    float gridSymbolSize = 32.0f;
-
     if (!isGridView) {
-        // DISEGNO LISTA
-        int yStart = headerHeight;
-        Font uiF = useDefaultUiFont ? GetFontDefault() : uiFont;
-        for (int i = 0; i < visibleLines + 1; ++i) { 
-            int idx = scrollOffset + i;
-            if (idx >= currentSymbols.size()) break;
-            int y = yStart + i * rowHeightList;
-            if (y + rowHeightList > screenHeight - footerHeight) break; 
-            
-            if (idx == selectedIndex) DrawRectangle(0, y, screenWidth, rowHeightList, SKYBLUE);
-            else if (idx % 2 == 1) DrawRectangle(0, y, screenWidth, rowHeightList, Fade(LIGHTGRAY, 0.3f));
-            
-            const auto &s = currentSymbols[idx];
-            Color txtCol = (idx == selectedIndex) ? BLACK : colTxt;
-            
-            if (!useDefaultFont) {
-                Vector2 posChar = {(float)padding, (float)y + (rowHeightList - listSymbolSize) / 2};
-                DrawTextEx(customFont, s.ch.c_str(), posChar, listSymbolSize, 0, txtCol);
-            } else DrawText(s.ch.c_str(), padding, y + (rowHeightList - 26)/2, 26, txtCol);
-            
-            float tSize = 26.0f; int tOff = (rowHeightList - (int)tSize) / 2;
-            if (!useDefaultUiFont) {
-                DrawTextEx(uiF, s.hex.c_str(), {(float)100, (float)y + tOff}, tSize, 0, DARKGREEN);
-                DrawTextEx(uiF, s.name.c_str(), {(float)200, (float)y + tOff}, tSize, 0, txtCol);
-            } else {
-                DrawText(s.hex.c_str(), 100, y + tOff, (int)tSize, DARKGREEN);
-                DrawText(s.name.c_str(), 200, y + tOff, (int)tSize, txtCol);
-            }
-        }
-    } else {
-        // DISEGNO GRIGLIA
-        int startIdx = (scrollOffset / cols) * cols;
-        int yStart = headerHeight + 10; 
-        
-        int gridContentWidth = (cols * cellSize) + ((cols - 1) * cellSpacing);
-        int gridSideMargin = (screenWidth - gridContentWidth) / 2;
-        if (gridSideMargin < padding) gridSideMargin = padding;
+        // --- VISTA A LISTA ---
+        DrawTextEx(uiFont, "Simbolo", { 20, (float)headerHeight + 10 }, 22, 0, GRAY);
+        DrawTextEx(uiFont, "Nome", { 120, (float)headerHeight + 10 }, 22, 0, GRAY);
+        DrawTextEx(uiFont, "Codice", { (float)screenWidth - 150, (float)headerHeight + 10 }, 22, 0, GRAY);
 
-        for (int i = 0; i < (visibleLines + 2) * cols; ++i) {
-            int idx = startIdx + i;
-            if (idx >= currentSymbols.size()) break;
-            int relIndex = idx - startIdx;
-            int r = relIndex / cols; int c = relIndex % cols;
-            int x = gridSideMargin + c * (cellSize + cellSpacing);
-            int y = yStart + r * (cellSize + cellSpacing);
-            if (y + cellSize > screenHeight - footerHeight) break;
+        for (int i = 0; i < visibleLines; i++) {
+            int itemIndex = scrollOffset + i;
+            if (itemIndex >= (int)currentSymbols.size()) break;
+
+            int y = headerHeight + 40 + (i * rowHeightList);
+            Rectangle rowRec = { (float)padding, (float)y, (float)screenWidth - (padding*2), (float)rowHeightList - 5 };
             
-            Rectangle cellRect = {(float)x, (float)y, (float)cellSize, (float)cellSize};
-            bool isHovered = CheckCollisionPointRec(GetMousePosition(), cellRect);
-            bool isSelected = (idx == selectedIndex);
-            
-            if (isSelected) {
-                DrawRectangleRounded(cellRect, 0.2f, 4, colSelBg);
-                DrawRectangleRoundedLines(cellRect, 0.2f, 4, Fade(SKYBLUE, 0.8f));
-            } else {
-                DrawRectangleRounded(cellRect, 0.2f, 4, isHovered ? colHoverBg : WHITE);
-                DrawRectangleRoundedLines(cellRect, 0.2f, 4, isHovered ? SKYBLUE : LIGHTGRAY);
-                // Permette la selezione col click in griglia
-                if (isHovered && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) selectedIndex = idx;
+            // --- LOGICA MOUSE AGGIUNTA ---
+            bool isHovered = CheckCollisionPointRec(GetMousePosition(), rowRec);
+            if (isHovered && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                selectedIndex = itemIndex; // Seleziona al clic
             }
             
-            const auto &s = currentSymbols[idx];
-            Color cTx = isSelected ? colSelTx : colTxt;
-            if (!useDefaultFont) {
-                Vector2 textSize = MeasureTextEx(customFont, s.ch.c_str(), gridSymbolSize, 0);
-                Vector2 pos = { cellRect.x + (cellRect.width - textSize.x) / 2, cellRect.y + (cellRect.height - textSize.y) / 2 };
-                DrawTextEx(customFont, s.ch.c_str(), pos, gridSymbolSize, 0, cTx);
+            bool isSelected = (itemIndex == selectedIndex);
+            
+            // Colori di sfondo aggiornati con l'effetto Hover
+            if (isSelected) {
+                DrawRectangleRounded(rowRec, 0.2f, 8, { 200, 220, 255, 255 }); // Blu per il selezionato
+            } else if (isHovered) {
+                DrawRectangleRounded(rowRec, 0.2f, 8, { 225, 235, 255, 255 }); // Azzurrino chiaro al passaggio del mouse
+            } else if (i % 2 == 0) {
+                DrawRectangleRounded(rowRec, 0.2f, 8, WHITE);
             } else {
-                int w = MeasureText(s.ch.c_str(), 20);
-                DrawText(s.ch.c_str(), (int)cellRect.x + ((int)cellRect.width - w)/2, (int)cellRect.y + 15, 20, cTx);
+                DrawRectangleRounded(rowRec, 0.2f, 8, { 250, 250, 250, 255 });
+            }
+
+            const auto& sym = currentSymbols[itemIndex];
+
+            // Scegliamo quale testo mostrare: 
+            // Se isEnglishMode è vero usa sym.keywords, altrimenti sym.name
+            std::string displayName = isEnglishMode ? sym.name_en : sym.name_it;
+
+            // Grandezza desiderata per il simbolo
+            float symbolSize = 38.0f; 
+            
+            if (!useDefaultFont) {
+                // Ho cambiato la Y da +8 a +4 per centrarlo meglio, e la grandezza a symbolSize
+                DrawTextEx(customFont, sym.ch.c_str(), { (float)padding + 15, (float)y + 4 }, symbolSize, 0, BLACK);
+            } else {
+                DrawText(sym.ch.c_str(), padding + 15, y + 4, (int)symbolSize, BLACK);
+            }
+            
+            DrawTextEx(uiFont, displayName.c_str(), { 120, (float)y + 12 }, 22, 0, isSelected ? DARKBLUE : DARKGRAY);
+            DrawTextEx(uiFont, sym.hex.c_str(), { (float)screenWidth - 150, (float)y + 12 }, 22, 0, GRAY);
+        }
+    } 
+    else 
+    {
+        // --- VISTA A GRIGLIA ---
+        int gridSideMargin = (screenWidth - (cols * cellSize) - ((cols - 1) * cellSpacing)) / 2;
+
+        for (int i = 0; i < visibleLines * cols; i++) {
+            int itemIndex = scrollOffset + i; 
+            if (itemIndex >= (int)currentSymbols.size()) break;
+
+            int row = i / cols;
+            int col = i % cols;
+
+            int x = gridSideMargin + col * (cellSize + cellSpacing);
+            int y = headerHeight + 15 + (row * (cellSize + cellSpacing));
+
+            Rectangle cellRec = { (float)x, (float)y, (float)cellSize, (float)cellSize };
+            
+            // --- LOGICA MOUSE AGGIUNTA ---
+            bool isHovered = CheckCollisionPointRec(GetMousePosition(), cellRec);
+            if (isHovered && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                selectedIndex = itemIndex; // Seleziona al clic
+            }
+            
+            bool isSelected = (itemIndex == selectedIndex);
+
+            // Colori di sfondo e bordi aggiornati con l'effetto Hover
+            if (isSelected) {
+                DrawRectangleRounded(cellRec, 0.2f, 8, { 200, 220, 255, 255 });
+                DrawRectangleRoundedLines(cellRec, 0.2f, 8, BLUE); 
+            } else if (isHovered) {
+                DrawRectangleRounded(cellRec, 0.2f, 8, { 225, 235, 255, 255 });         // Azzurrino al passaggio
+                DrawRectangleRoundedLines(cellRec, 0.2f, 8, { 150, 180, 255, 255 });    // Bordo blu chiaro
+            } else {
+                DrawRectangleRounded(cellRec, 0.2f, 8, WHITE);
+                DrawRectangleRoundedLines(cellRec, 0.2f, 8, LIGHTGRAY); 
+            }
+
+            // Disegno Simbolo
+            const auto& sym = currentSymbols[itemIndex];
+            float symWidth = 0;
+            if (!useDefaultFont) {
+                symWidth = MeasureTextEx(customFont, sym.ch.c_str(), 30, 0).x;
+                DrawTextEx(customFont, sym.ch.c_str(), { x + (cellSize - symWidth)/2, (float)y + 15 }, 30, 0, BLACK);
+            } else {
+                symWidth = (float)MeasureText(sym.ch.c_str(), 30);
+                DrawText(sym.ch.c_str(), x + (cellSize - (int)symWidth)/2, y + 15, 30, BLACK);
             }
         }
     }
-    EndScissorMode(); 
+
+    EndScissorMode();
 
     // Disegno Barra di Scorrimento Laterale
     if (!currentSymbols.empty()) {
@@ -487,13 +570,16 @@ void App::Draw() {
         if (!useDefaultFont) {
             Vector2 symSize = MeasureTextEx(customFont, s.ch.c_str(), 60, 0);
             float symY = footerY + (footerHeight - symSize.y) / 2;
-            DrawTextEx(customFont, s.ch.c_str(), {(float)padding + 10, symY}, 60, 0, BLACK);
+            DrawTextEx(customFont, s.ch.c_str(), {(float)padding + 10, symY + (-40)}, 60, 0, BLACK);
         } else DrawText(s.ch.c_str(), padding + 10, footerY + 40, 50, BLACK);
 
         // Info Testuali
         int infoX = 100; Font uiF = useDefaultUiFont ? GetFontDefault() : uiFont;
-        if (!useDefaultUiFont) DrawTextEx(uiF, s.name.c_str(), {(float)infoX, (float)footerY + 10}, 36, 0, Color{0, 60, 120, 255});
-        else DrawText(s.name.c_str(), infoX, footerY + 10, 30, Color{0, 60, 120, 255});
+
+        std::string displayName = isEnglishMode ? s.name_en : s.name_it;
+
+        if (!useDefaultUiFont) DrawTextEx(uiF, displayName.c_str(), {(float)infoX, (float)footerY + 10}, 36, 0, Color{0, 60, 120, 255});
+        else DrawText(displayName.c_str(), infoX, footerY + 10, 30, Color{0, 60, 120, 255});
         
         int codeY = footerY + 50;
         
@@ -518,12 +604,13 @@ void App::Draw() {
             else DrawText("LaTeX: -", infoX + 160, codeY, 20, Fade(GRAY, 0.5f));
         }
 
-        // Tasti Copia
-        int keysY = footerY + 95; int keyX = infoX;
+        // // Tasti Copia
+        int keysY = footerY + 95; 
+        int keyX = infoX + (-75);
         
         // Funzione Lambda locale per disegnare i Badge
         auto DrawKeyBadge = [&](const char* key, const char* desc, int x) {
-            float keyTextSize = 20.0f; float descTextSize = 22.0f;
+            float keyTextSize = 20.0f; float descTextSize = 24.0f;
             Vector2 keyDim = MeasureTextEx(uiF, key, keyTextSize, 0);
             Vector2 descDim = MeasureTextEx(uiF, desc, descTextSize, 0);
             float kWidth = keyDim.x + 20; float kHeight = 32;
@@ -536,13 +623,25 @@ void App::Draw() {
             
             Vector2 dPos = {(float)x + kWidth + 8, (float)keysY + (kHeight - descDim.y)/2};
             DrawTextEx(uiF, desc, dPos, descTextSize, 0, DARKGRAY);
-            return (int)(kWidth + descDim.x + 35); 
+
+            return (int)(kWidth + descDim.x + 45); 
         };
 
-        keyX += DrawKeyBadge("ENTER", "Incolla", keyX); 
-        keyX += DrawKeyBadge("F1", "HTML", keyX);
-        keyX += DrawKeyBadge("F2", "LaTeX", keyX);
-        DrawKeyBadge("F3", "Alt+X", keyX);
+        keyX += DrawKeyBadge("ENTER", "Copia & Incolla", keyX); 
+        keyX += DrawKeyBadge("F1",               "HTML", keyX);
+        keyX += DrawKeyBadge("F2",              "LaTeX", keyX);
+        keyX += DrawKeyBadge("F3",              "Alt+X", keyX);
+
+        // Tasti Interazione
+        keysY = footerY + 135; 
+        keyX = infoX + (-75);
+
+        // questi tre sono stati aggiunti
+        std::string langBtn = (isEnglishMode) ? "to ITA" : "to ENG" ;
+        
+        keyX += DrawKeyBadge("F5",   "Fisso", keyX);
+        keyX += DrawKeyBadge("F6",     "TRN", keyX+102);
+        keyX += DrawKeyBadge("F7",  langBtn.c_str(), keyX+114);
     }
 
     // --- 4. OVERLAY DI FEEDBACK (Animazione Copia) ---
@@ -565,3 +664,27 @@ void App::Draw() {
 
     EndDrawing();
 }
+
+void App::FilterSymbols() {
+    currentSymbols.clear();
+    for (const auto& s : allSymbols) {
+        // 1. Controllo Categoria
+        bool catMatch = (currentCategory == "All") || (s.category == currentCategory);
+        
+        // 2. Controllo Testo (Search)
+        bool textMatch = true;
+        if (searchQuery.length() > 0) {
+            // Semplice ricerca (puoi potenziarla con il minuscolo se vuoi)
+            textMatch = (s.name_it.find(searchQuery) != std::string::npos) || 
+                         (s.name_en.find(searchQuery) != std::string::npos);
+        }
+
+        if (catMatch && textMatch) {
+            currentSymbols.push_back(s);
+        }
+    }
+    // Resetta la selezione quando filtri per evitare crash
+    selectedIndex = 0;
+    scrollOffset = 0;
+}
+
