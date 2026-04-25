@@ -4,21 +4,35 @@
 [![Documentation](https://img.shields.io/badge/Documentation-Read_Technical_Guide-blue.svg)](documentation.md)
 
 
-**Unicode Symbols Browser** is a lightweight, high-performance Unicode symbol browser built in **C++** with **Raylib**.  
-It helps users quickly find and copy mathematical operators, Greek letters, and technical symbols—without dealing with slow character maps or complex web pages.
+**Unicode Symbols Browser 2** is a lightweight, highly customizable, and high-performance Unicode symbol browser built in **C++** with **Raylib**.  
+It helps users quickly find, filter, and copy mathematical operators, Greek letters, and technical symbols—without dealing with slow character maps or complex web pages. 
+
+The new 2.0 version introduces a fully customizable CSV database, dynamic UI categories, and bilingual support!
 
 ---
 
 ## 🚀 Features
-- **Cross-Platform:** Runs perfectly on Windows and Linux.
-- **Portable:** No installation required! Just extract the folder and run it.
-- **Fast Search:** Instantly filter symbols by *Italian Name*, *English Keywords*, or *Hex Codepoint*.  
-- **Keyboard Navigation:** Optimized for speed—use arrow keys to navigate and **Enter** to copy.  
-- **Clipboard Integration:** One-press copy with visual feedback.  
+- **Custom Database (`database.csv`):** The app is no longer hardcoded! Easily add your own symbols, keywords, and categories by simply editing a CSV file.
+- **Dynamic Categories:** Tab filters are generated automatically based on the categories you define in your database.
+- **Bilingual Support:** Switch instantly between English and Italian symbol descriptions and UI elements using the **F6** key.
+- **Modern UI & Graphics:** Overhauled interface with a dual-font system, visual hotkey badges, and a clean, responsive layout.
+- **Fast Search:** Instantly filter symbols by *Name*, *Keywords*, or *Hex Codepoint*.  
+- **Keyboard Navigation:** Optimized for speed—use arrow keys to navigate and shortcut keys (F1, F2, F3) to copy exactly what you need.  
+- **Clipboard Integration:** One-press copy with visual feedback (Symbol, Hex, or LaTeX).  
 - **Bundled Font:** Uses `NotoSansMath-Regular.ttf` for pristine, guaranteed rendering of complex math symbols across all systems.
 
 ---
 
+## 🛠️ How to Add Your Own Symbols
+You can easily expand the app's library without touching the code. Just open `database.csv` (located in the same folder as the executable or in `resources/`) with any text editor or spreadsheet software.
+
+Add a new line using this format:
+`Name_IT;Name_EN;HexCode;Symbol;Category`
+
+**Example:**
+`Uguale";"Equals";"003D";"=";"Maths`
+
+---
 ## 📥 Quick Start (For Users)
 You don't need to install anything or mess with compilers to use this app.
 
@@ -38,6 +52,9 @@ You don't need to install anything or mess with compilers to use this app.
 | **F1**          | Copies the HTML Entity code                                |
 | **F2**          | Copies the LaTeX Command                                   |
 | **F3**          | Copies the Hex Code                                        |
+| **F5**          | Toggle Always on Top                                       |
+| **F6**          | Toggle Application to transparent mode                     |
+| **F7**          | Change language key                                        |
 | **TAB**         | Toggles between List View (Compact) and Grid View (Visual) |
 | **Backspace**   | Deletes characters from the search bar                     |
 | **Mouse Wheel** | Scrolls the list manually                                  |
@@ -76,11 +93,15 @@ If you want to compile the code yourself, the project uses **CMake** for a clean
 ---
 
 ## 📂 Assets
-Icon: The app uses usb.png for its window icon.
+To run properly, the executable requires the following files to be present in its directory (or its resources folder, depending on your CMake setup):
 
-Fonts: The app requires NotoSansMath-Regular.ttf to be in the same folder as the executable.
+database.csv (Contains all the symbols and translations)
 
-(Both files are included in the repository and automatically managed by CMake).
+NotoSansMath-Regular.ttf (For rendering complex symbols)
+
+NotoSans-Regular.ttf (For clean UI text rendering)
+
+(All files are included in the repository and automatically managed by CMake during the build process).
 
 ---
 
