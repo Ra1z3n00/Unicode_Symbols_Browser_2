@@ -4,8 +4,7 @@
 [![Documentation](https://img.shields.io/badge/Documentation-Read_Technical_Guide-blue.svg)](documentation.md)
 
 
-**Unicode Symbols Browser 2** is a lightweight, highly customizable, and high-performance Unicode symbol browser built in **C++** with **Raylib**.  
-It helps users quickly find, filter, and copy mathematical operators, Greek letters, and technical symbols—without dealing with slow character maps or complex web pages. 
+**Unicode Symbols Browser 2** is a lightweight, highly customizable, and high-performance Unicode symbol browser built in **C++** with **Raylib**. It helps users quickly find, filter, and copy mathematical operators, Greek letters, and technical symbols—without dealing with slow character maps or complex web pages. 
 
 The new 2.0 version introduces a fully customizable CSV database, dynamic UI categories, and bilingual support!
 
@@ -54,9 +53,10 @@ You don't need to install anything or mess with compilers to use this app.
 | **F3**          | Copies the Hex Code                                        |
 | **F5**          | Toggle Always on Top                                       |
 | **F6**          | Toggle Application to transparent mode                     |
-| **F7**          | Change language key                                        |
+| **F7**          | Change description language                                |
 | **TAB**         | Toggles between List View (Compact) and Grid View (Visual) |
 | **Backspace**   | Deletes characters from the search bar                     |
+| **Canc**        | Deletes all characters from the search bar                 |
 | **Mouse Wheel** | Scrolls the list manually                                  |
 
 ---
@@ -96,9 +96,7 @@ If you want to compile the code yourself, the project uses **CMake** for a clean
 To run properly, the executable requires the following files to be present in its directory (or its resources folder, depending on your CMake setup):
 
 database.csv (Contains all the symbols and translations)
-
 NotoSansMath-Regular.ttf (For rendering complex symbols)
-
 NotoSans-Regular.ttf (For clean UI text rendering)
 
 (All files are included in the repository and automatically managed by CMake during the build process).
