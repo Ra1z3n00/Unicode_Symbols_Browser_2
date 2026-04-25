@@ -1,69 +1,71 @@
 # Unicode Symbols Browser 2 – Technical Documentation
 
 ## 1. Project Overview
-**Unicode Symbols Browser 2** is a specialized Unicode symbol browser designed for mathematicians, developers, and writers. It allows users to search, view, and copy mathematical symbols in various formats (Unicode, HTML, LaTeX, and Hex codes).
+**Unicode Symbols Browser 2** is a specialized Unicode symbol browser designed for mathematicians, developers, and writers. It allows users to search, view, and copy mathematical symbols in various formats (Unicode Glyph, Hex codes, and LaTeX commands).
 
-The application is built using **C++** and the **Raylib** library. Version 2 introduces a completely refactored Object-Oriented architecture, a CMake-based cross-platform build system, and a bundled font for pixel-perfect rendering on both Windows and Linux.
+Version 2.0 introduces a massive overhaul: a completely refactored Object-Oriented architecture, a user-customizable CSV database, bilingual support (English/Italian), and a dual-font rendering system for pristine UI and mathematical glyphs.
 
 ---
 
 ## 2. Architecture & Modularity
-The project has been refactored from a single monolithic file into a modular C++ structure to improve maintainability and prevent namespace collisions:
+The project utilizes a modular C++ structure to improve maintainability and separate the UI engine from the data layer:
 
-- **`main.cpp`**: The minimal entry point. It instantiates the `App` class and triggers the main application loop (`app.Run()`).
-- **`App.h` / `App.cpp`**: The core engine. It handles window initialization, asset loading, input polling (keyboard/typing), UI rendering, and clipboard interactions.
-- **`Symbol.h`**: Defines the core data structure (`struct Symbol`) used to store symbol information (codepoint, multiple languages names, actual character, HTML, LaTeX).
+- **`main.cpp`**: The minimal entry point. Instantiates the `App` class and triggers the main application loop (`app.Run()`).
+- **`App.h` / `App.cpp`**: The core engine. It handles window initialization, dual-font loading, input polling (keyboard/typing), dynamic UI rendering, and clipboard interactions.
+- **`dataLoader.h`**: The data layer. Responsible for parsing the external `database.csv` file into `Symbol` structures, making the application fully data-driven.
 
 ---
 
-## 3. Build System (CMake)
-The project transitioned from manual compiler commands (`g++`) to **CMake**, enabling a unified, cross-platform build system.
+## 3. Data-Driven Design & Dynamic Categories
+Instead of relying on hardcoded arrays, the application is now entirely data-driven.
+- **Customizable Database:** On startup, the app reads `database.csv`. Users can add or modify symbols by following a simple format: `Name_IT;Name_EN;HexCode;Symbol;Category`.
+- **Procedural UI:** The `App` constructor scans the loaded database to extract unique categories. It then dynamically generates the interactive category tabs in the header, meaning the UI automatically adapts to the user's custom database.
+
+---
+
+## 4. Build System (CMake)
+The project uses **CMake** for a unified, cross-platform build system.
 
 **Key CMake Features:**
-- **Out-of-source builds:** Generates binaries in an isolated `build/` directory without polluting the source tree.
-- **Asset Automation:** Uses `file(COPY ...)` to automatically transfer `NotoSansMath-Regular.ttf` and `usb.png` into the `CMAKE_CURRENT_BINARY_DIR`. This ensures the executable always finds its dependencies locally, making the app perfectly **Portable** without requiring system-wide installations.
+- **Out-of-source builds:** Generates binaries in an isolated `build/` directory.
+- **Asset Management:** The `CMakeLists.txt` is configured to automatically copy the required assets (`database.csv` and the `fonts/` folder containing `NotoSansMath-Regular.ttf` and `NotoSans-Regular.ttf`) into the build directory, ensuring the executable works out-of-the-box.
 
 ---
 
-## 4. The Font Strategy
-Relying on system fonts (like Segoe UI) caused missing glyphs ("tofu" blocks) on different OS environments like Linux. The app now relies on a bundled, high-quality font.
+## 5. Input & Navigation
+The application features a custom, zero-latency input buffer.
+- **Instant Search:** Typing automatically appends to the search buffer and instantly filters the `currentSymbols` list. The search engine checks both the Italian Name and English Keywords simultaneously.
+- **Keyboard Navigation:** Vertical scrolling is handled via UP/DOWN arrow keys with auto-clamping to keep the highlighted symbol visible.
 
-- **`NotoSansMath-Regular.ttf`**: Statically loaded by the app. This open-source font guarantees identical, pristine rendering of complex mathematical and technical symbols across Windows and Linux.
-- **Texture Filtering**: The font undergoes `GenTextureMipmaps` and trilinear filtering to ensure it scales smoothly without pixelation, even on high-DPI displays.
-- **MSAA 4x**: Multi-Sample Anti-Aliasing is enabled via `SetConfigFlags(FLAG_MSAA_4X_HINT)` to render rounded rectangles and UI elements perfectly smooth.
-
----
-
-## 5. Input and State Management
-The application maintains a robust state machine handled within `App::Update()`:
-
-- **Safe Search Buffer**: Characters typed by the user filter the symbol list dynamically. The search input is strictly capped at **20 characters** to prevent buffer overflows and UI breaking.
-- **View Toggle (`isGridView`)**: A boolean state that switches the rendering pipeline between the List (compact) and Grid (visual) views.
-- **Navigation**: Arrow keys handle navigation. In Grid view, vertical movement intelligently jumps by entire rows. Auto-scrolling math ensures the selected item is always clamped within the visible application window.
+**Global Hotkeys:**
+- **Enter / F1:** Copy Symbol (Glyph)
+- **F2:** Copy Hex Code
+- **F3:** Copy LaTeX Command
+- **F5:** Toggle "Always on Top" window behavior
+- **F6:** Toggle Application to transparent mode 
+- **F7:** Toggle Interface Language (English / Italian)
 
 ---
 
 ## 6. Rendering Pipeline
-The drawing phase (`App::Draw()`) is split into three distinct zones:
+The drawing phase (`App::Draw()`) is split into specific layout zones, utilizing a **Dual-Font System** (NotoSansMath for symbols, NotoSans for UI text):
 
 ### A. The Header (Top)
-Contains the search bar and procedural icons for the View Toggle buttons (drawn using Raylib primitives like `DrawRectangle` instead of external images to save memory).
+Contains the search bar and the procedurally generated Category Tabs. The tabs highlight the currently active category filter.
 
 ### B. The Content Area (Middle)
-Uses `BeginScissorMode` to clip content. This ensures that when the user scrolls, the list or grid items cleanly cut off and do not "leak" into the header or footer areas.
-- **List View**: Renders horizontal rows optimized for reading names and codes.
-- **Grid View**: Calculates a `gridSideMargin` dynamically so that, regardless of window size, the grid block is always perfectly centered.
+Uses `BeginScissorMode` to clip content. This ensures that when the user scrolls, the list items cleanly cut off and do not "leak" into the header or footer areas. The rows display the translated symbol name and its Hex code.
 
-### C. The Footer (Bottom)
-Designed for high-visibility contextual information.
-- Shows a large preview of the selected symbol.
-- Displays visual "Keys" (Enter, F1, F2, F3) drawn as physical button badges using rounded rectangles and centered text.
+### C. The Footer (Bottom - 180px)
+Designed as a high-visibility control panel.
+- Shows a giant, high-resolution preview of the selected symbol.
+- Displays textual info (Category, Hex).
+- Features a **2x2 Grid of Hotkey Badges** (F1, F2, F3, F7). These badges are dynamically translated and drawn using Raylib primitives (`DrawRectangleRounded`) rather than static images, ensuring they perfectly wrap their text content.
 
 ---
 
 ## 7. Clipboard Integration
-The app uses Raylib's `SetClipboardText()` to support four distinct copy modes instantly:
-- **ENTER**: Copies the actual glyph (e.g., `∑`).
-- **F1**: Copies the HTML entity (e.g., `&#x2211;`).
-- **F2**: Copies the LaTeX command (e.g., `\sum`).
-- **F3**: Copies the Hex code (e.g., `2211`).
+The app uses Raylib's `SetClipboardText()` to support three distinct copy modes, triggering an on-screen notification (`lastCopyAction` + `lastCopyContent`):
+- **Mode 0 (Symbol):** Copies the actual glyph (e.g., `∑`).
+- **Mode 1 (Hex):** Copies the Hexadecimal codepoint (e.g., `2211`).
+- **Mode 2 (LaTeX):** Copies the LaTeX command (e.g., `\sum`).
