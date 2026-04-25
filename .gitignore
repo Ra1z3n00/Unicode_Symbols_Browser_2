@@ -1,6 +1,6 @@
 # Cartelle di compilazione CMake (FONDAMENTALE)
 build/
-build_win/
+build_windows/
 build_linux/
 raylib/
 
