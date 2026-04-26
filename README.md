@@ -11,14 +11,13 @@ The new 2.0 version introduces a fully customizable CSV database, dynamic UI cat
 ---
 
 ## 🚀 Features
-- **Custom Database (`database.csv`):** The app is no longer hardcoded! Easily add your own symbols, keywords, and categories by simply editing a CSV file.
-- **Dynamic Categories:** Tab filters are generated automatically based on the categories you define in your database.
-- **Bilingual Support:** Switch instantly between English and Italian symbol descriptions and UI elements using the **F6** key.
-- **Modern UI & Graphics:** Overhauled interface with a dual-font system, visual hotkey badges, and a clean, responsive layout.
-- **Fast Search:** Instantly filter symbols by *Name*, *Keywords*, or *Hex Codepoint*.  
-- **Keyboard Navigation:** Optimized for speed—use arrow keys to navigate and shortcut keys (F1, F2, F3) to copy exactly what you need.  
-- **Clipboard Integration:** One-press copy with visual feedback (Symbol, Hex, or LaTeX).  
-- **Bundled Font:** Uses `NotoSansMath-Regular.ttf` for pristine, guaranteed rendering of complex math symbols across all systems.
+- **Dynamic UI Scaling (New in 2.1.0):** The interface now automatically adjusts its layout and font sizes based on your monitor resolution (720p, 1080p, 4K+), ensuring a perfect experience on any screen.
+- **Advanced Productivity (AutoPaste):** Beyond simple copying, use **CTRL + Shortcut** to instantly paste symbols, Hex codes, or LaTeX directly into your active document (Word, LaTeX editors, etc.).
+- **Custom Database (`database.csv`):** Fully customizable! Add your own symbols, keywords, and categories by simply editing a CSV file.
+- **Dynamic Categories:** Tab filters are generated automatically based on the categories defined in your database.
+- **Bilingual Support:** Switch instantly between English and Italian descriptions and UI elements using the **F6** key.
+- **Fast Search:** Filter symbols instantly by *Name*, *Keywords*, or *Hex Codepoint*.
+- **Modern UI:** Dual-font system for high-quality rendering of both UI text and complex mathematical symbols.
 
 ---
 
@@ -29,8 +28,11 @@ Add a new line using this format:
 `Name_IT;Name_EN;HexCode;LaTeX;Category`
 
 **Example:**
-`Uguale";"Equals";"003D";"=";"Maths`.
-`"Diverso";"Neq not equal";"2260";"\\neq";"Maths"`.
+```csv
+"Uguale";"Equals";"003D";"=";"Maths"
+"Diverso";"Neq not equal";"2260";"\\neq";"Maths"
+```
+
 
 ---
 ## 📥 Quick Start (For Users)
@@ -46,8 +48,6 @@ You don't need to install anything or mess with compilers to use this app.
 ## 🎮 Controls
 | Key / Input      | Action                                                     |
 | ---------------- | ---------------------------------------------------------- |
-| **Typing**       | Types into the search bar                                  |
-| **↑ / ↓**        | Navigates the symbol list                                  |
 | **Enter**        | Copies the actual Unicode Symbol                           |
 | **F1**           | Copies the HTML Entity code                                |
 | **F2**           | Copies the LaTeX Command                                   |
@@ -62,7 +62,20 @@ You don't need to install anything or mess with compilers to use this app.
 | **TAB**          | Toggles between List View (Compact) and Grid View (Visual) |
 | **Backspace**    | Deletes characters from the search bar                     |
 | **Canc**         | Deletes all characters from the search bar                 |
-| **Mouse Wheel**  | Scrolls the list manually                                  |
+
+| Action                 | Key         |  CTRL + Key (AutoPaste) |
+| ---------------------- | ----------- | ----------------------- |
+| **Copy Symbol**        | `ENTER`     | `CTRL + ENTER`          |
+| **Copy Hex Code**      | `F1`        | `CTRL + F1`             |
+| **Copy LaTeX**         | `F2`        | `CTRL + F2`             |
+| **Copy HTML**          | `F3`        | `CTRL + F3`             |
+| **Always on Top**      | `F5`        | -                       |
+| **Toggle Transparent** | `F6`        | -                       |
+| **Switch Language**    | `F7`        | -                       |
+| **Toggle Vies**        | `TAB`       | -                       |
+| **Delete Character**   | `Backspace` | -                       |
+| **Delete All**         | `Canc`      | -                       |
+
 
 ---
 
