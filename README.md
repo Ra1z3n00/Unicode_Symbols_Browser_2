@@ -105,7 +105,7 @@ NotoSans-Regular.ttf (For clean UI text rendering)
 
 ## 🖼️ Screenshots
 <p align="center">
-<img width="400" height="500" alt="Image" src="https://github.com/user-attachments/assets/1eae56f5-101e-41ac-8b47-ebb45d874568" />
+<img width="400" height="500" alt="Image" src="https://github.com/user-attachments/assets/337b85a5-a656-4cfd-833c-11940d77fc73" />
 </p>
 
 ---
