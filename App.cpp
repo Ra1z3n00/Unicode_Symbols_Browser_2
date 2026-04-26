@@ -65,7 +65,35 @@ App::~App() {
 }
 
 void App::Run() {
-    InitWindow(screenWidth, screenHeight, "Unicode Symbols Browser 2.0");
+    // 1. Inizializza con dimensioni base per permettere a Raylib di leggere il monitor
+    InitWindow(screenWidth, screenHeight, "Unicode Symbols Browser 2.1.0");
+
+    // 2. Leggi il monitor
+    int monitor = GetCurrentMonitor();
+    int monitorWidth = GetMonitorWidth(monitor);
+    int monitorHeight = GetMonitorHeight(monitor);
+
+    // 3. Calcola il fattore di scala in base all'altezza dello schermo
+    scaleFactor = 1.0f;
+    if (monitorHeight <= 768) {
+        scaleFactor = 0.75f; // Schermi piccoli (es. 720p)
+    } else if (monitorHeight > 1080) {
+        scaleFactor = 1.25f; // Schermi grandi (es. 1440p)
+    }
+
+    // 4. Applica il fattore di scala alle variabili principali della UI
+    screenWidth = screenWidth * scaleFactor;
+    screenHeight = screenHeight * scaleFactor;
+    headerHeight = headerHeight * scaleFactor;
+    footerHeight = footerHeight * scaleFactor;
+    padding = padding * scaleFactor;
+    cellSize = cellSize * scaleFactor;
+    rowHeightList = rowHeightList * scaleFactor;
+
+    // 5. Ridimensiona e centra la finestra
+    SetWindowSize(screenWidth, screenHeight);
+    SetWindowPosition((monitorWidth - screenWidth) / 2, (monitorHeight - screenHeight) / 2);
+
     SetTargetFPS(60);
 
     LoadAssets();
@@ -80,8 +108,8 @@ void App::Run() {
 
 void App::LoadAssets() {
     // 1. Caricamento Icona Finestra (opzionale, se esiste il file)
-    if (FileExists("resource/usb.png")) {
-        Image icon = LoadImage("resource/usb.png");
+    if (FileExists("usb.png")) {
+        Image icon = LoadImage("usb.png");
         SetWindowIcon(icon);
         UnloadImage(icon);
     }
@@ -115,13 +143,13 @@ void App::LoadAssets() {
 
     // --- CARICAMENTO FONT INTERFACCIA (Testi piccoli, Nomi, ecc) ---
     const char* uiFontPaths[] = {
-        "resouce/NotoSans-Italic.ttf",
-        "resource/NotoSansMath-Regular.ttf",
+        "fonts/NotoSans-Italic.ttf",
+        "fonts/NotoSansMath-Regular.ttf",
     };
 
     for (const char* path : uiFontPaths) {
         if (FileExists(path)) {
-            uiFont = LoadFontEx(path, 36, codepoints, codepointCount);
+            uiFont = LoadFontEx(path, 36 * scaleFactor, codepoints, codepointCount);
             SetTextureFilter(uiFont.texture, TEXTURE_FILTER_BILINEAR); // Anti-aliasing
             useDefaultUiFont = false;
             break;
@@ -130,12 +158,12 @@ void App::LoadAssets() {
 
     // --- CARICAMENTO FONT SIMBOLI (Testi grandi, Icone) ---
     const char* symFontPaths[] = {
-        "resource/NotoSansMath-Regular.ttf",                            
+        "fonts/NotoSansMath-Regular.ttf",                            
     };
 
     for (const char* path : symFontPaths) {
         if (FileExists(path)) {
-            customFont = LoadFontEx(path, 60, codepoints, codepointCount);
+            customFont = LoadFontEx(path, 60 * scaleFactor, codepoints, codepointCount);
             SetTextureFilter(customFont.texture, TEXTURE_FILTER_BILINEAR);
             useDefaultFont = false;
             break;
@@ -268,12 +296,21 @@ void App::Update() {
         }
     }
 
-    // 5. Azioni di Copia (Delega al nuovo metodo ExecuteCopy)
+    // 5. Azioni di Copia (Delega al metodo ExecuteCopy)
     if (!currentSymbols.empty()) {
-        if (IsKeyPressed(KEY_ENTER)) ExecuteCopy(0);
-        else if (IsKeyPressed(KEY_F1)) ExecuteCopy(1);
-        else if (IsKeyPressed(KEY_F2)) ExecuteCopy(2);
-        else if (IsKeyPressed(KEY_F3)) ExecuteCopy(3);
+        // Se premi CTRL + INVIO -> Modalità 4 (Copia e Incolla)
+        if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) {
+            if (IsKeyPressed(KEY_ENTER)) ExecuteCopy(4);    // Copia e Incolla Simbolo
+            else if (IsKeyPressed(KEY_F1)) ExecuteCopy(5);  // Copia e Incolla Hex
+            else if (IsKeyPressed(KEY_F2)) ExecuteCopy(6);  // Copia e Incolla LaTeX
+            else if (IsKeyPressed(KEY_F3)) ExecuteCopy(7);  // Copia e Incolla HTML
+        } else {
+            // Modalità standard (Solo Copia)
+            if (IsKeyPressed(KEY_ENTER)) ExecuteCopy(0);
+            else if (IsKeyPressed(KEY_F1)) ExecuteCopy(1);
+            else if (IsKeyPressed(KEY_F2)) ExecuteCopy(2);
+            else if (IsKeyPressed(KEY_F3)) ExecuteCopy(3);
+        }
     }
 
     if (copyFeedbackTimer > 0) copyFeedbackTimer -= dt;
@@ -298,36 +335,76 @@ void App::ExecuteCopy(int mode) {
     bool actionTriggered = false;
 
     switch (mode) {
-        case 0: // ENTER: Simbolo crudo + AutoPaste
-            SetClipboardText(s.ch.c_str());
-            lastCopyContent = s.ch;
-            lastCopyAction = "Inserito: ";
-            actionTriggered = true;
-            
-            Platform::AutoPaste(); 
+        case 0: // ENTER: Copia
+            if(!s.ch.empty()) {
+                SetClipboardText(s.ch.c_str());
+                lastCopyContent = s.ch;
+                lastCopyAction = isEnglishMode ? "Copied: " : "Copiato: ";
+                actionTriggered = true;
+            }
             break;
             
         case 1: // F1: HTML
-            lastCopyContent = "&#x" + s.hex + ";";
-            SetClipboardText(lastCopyContent.c_str());
-            lastCopyAction = "Copiato: ";
-            actionTriggered = true;
+            if(!s.hex.empty()) {
+                lastCopyContent = "&#x" + s.hex + ";";
+                SetClipboardText(lastCopyContent.c_str());
+                lastCopyAction = isEnglishMode ? "Copied: " : "Copiato: ";
+                actionTriggered = true;
+            } 
             break;
             
         case 2: // F2: LaTeX
             if (!s.latex.empty()) { 
                 SetClipboardText(s.latex.c_str()); 
                 lastCopyContent = s.latex;
-                lastCopyAction = "Copiato: ";
+                lastCopyAction = isEnglishMode ? "Copied: " : "Copiato: ";
                 actionTriggered = true; 
             }
             break;
             
         case 3: // F3: HEX
-            SetClipboardText(s.hex.c_str());
-            lastCopyContent = s.hex;
-            lastCopyAction = "Copiato: ";
-            actionTriggered = true;
+            if(!s.hex.empty()) {
+                SetClipboardText(s.hex.c_str());
+                lastCopyContent = s.hex;
+                lastCopyAction = isEnglishMode ? "Copied: " : "Copiato: ";
+                actionTriggered = true;
+            }
+            break;
+
+        case 4: // CTRL + ENTER: copia & incolla
+            if(!s.ch.empty()) {
+                SetClipboardText(s.ch.c_str());
+                lastCopyContent = s.ch;
+                actionTriggered = true;
+                Platform::AutoPaste();
+            }
+            break;
+
+        case 5: // CTRL + F1: HTML
+            if(!s.hex.empty()) {
+                lastCopyContent = "&#x" + s.hex + ";";
+                SetClipboardText(lastCopyContent.c_str());
+                actionTriggered = true;
+                Platform::AutoPaste();
+            } 
+            break;
+
+        case 6: // CTRL + F2: LaTeX
+            if (!s.latex.empty()) { 
+                SetClipboardText(s.latex.c_str()); 
+                lastCopyContent = s.latex;
+                actionTriggered = true;
+                Platform::AutoPaste();
+            }
+            break;
+            
+            case 7: // CTRL + F3: HEX
+            if(!s.hex.empty()) {
+                SetClipboardText(s.hex.c_str());
+                lastCopyContent = s.hex;
+                actionTriggered = true;
+                Platform::AutoPaste();
+            }
             break;
     }
 
@@ -348,7 +425,7 @@ void App::Draw() {
 
     if (!useDefaultUiFont) {
         // Usiamo il font caricato per una qualità perfetta
-        DrawTextEx(uiFont, "Cerca:", { (float)padding, (float)searchY + (-2) }, 35, 0, DARKGRAY);
+        DrawTextEx(uiFont, "Cerca:", { (float)padding, (float)searchY + (-2) }, 35 * scaleFactor, 0, DARKGRAY);
     } else {
         // Fallback se il font non viene trovato
         DrawText("Cerca:", padding, searchY + 5, 20, DARKGRAY);
@@ -398,7 +475,9 @@ void App::Draw() {
 
     int tabX = 15;
     bool isHoveringAnyTab = false;
-    float tabFontSize = 24.0f;
+    //float tabFontSize = 24.0f;
+    float tabFontSize = 24.0f * scaleFactor;
+    
     for (const auto& cat : categories) {
        // 1. Misuriamo la larghezza usando la variabile
         float textWidth = MeasureTextEx(uiFont, cat.c_str(), tabFontSize, 0).x;
@@ -416,7 +495,7 @@ void App::Draw() {
         float exactTextY = btnRec.y + ((btnRec.height - tabFontSize) / 2.0f); 
         
         // 3. Disegniamo il testo usando la variabile
-        DrawTextEx(uiFont, cat.c_str(), { exactTextX, exactTextY }, tabFontSize, 0, isSelected ? WHITE : DARKGRAY);
+        DrawTextEx(uiFont, cat.c_str(), { exactTextX, exactTextY }, tabFontSize * scaleFactor, 0, isSelected ? WHITE : DARKGRAY);
 
         // Gestione Clic Mouse
         if (CheckCollisionPointRec(GetMousePosition(), btnRec)) {
@@ -443,9 +522,9 @@ void App::Draw() {
     
     if (!isGridView) {
         // --- VISTA A LISTA ---
-        DrawTextEx(uiFont, "Simbolo", { 20, (float)headerHeight + 10 }, 22, 0, GRAY);
-        DrawTextEx(uiFont, "Nome", { 120, (float)headerHeight + 10 }, 22, 0, GRAY);
-        DrawTextEx(uiFont, "Codice", { (float)screenWidth - 150, (float)headerHeight + 10 }, 22, 0, GRAY);
+        DrawTextEx(uiFont, "Simbolo", { 20, (float)headerHeight + 10 }, 22 * scaleFactor, 0, GRAY);
+        DrawTextEx(uiFont, "Nome", { 120, (float)headerHeight + 10 }, 22 * scaleFactor, 0, GRAY);
+        DrawTextEx(uiFont, "Codice", { (float)screenWidth - 150, (float)headerHeight + 10 }, 22 * scaleFactor, 0, GRAY);
 
         for (int i = 0; i < visibleLines; i++) {
             int itemIndex = scrollOffset + i;
@@ -484,13 +563,13 @@ void App::Draw() {
             
             if (!useDefaultFont) {
                 // Ho cambiato la Y da +8 a +4 per centrarlo meglio, e la grandezza a symbolSize
-                DrawTextEx(customFont, sym.ch.c_str(), { (float)padding + 15, (float)y + 4 }, symbolSize, 0, BLACK);
+                DrawTextEx(customFont, sym.ch.c_str(), { (float)padding + 15, (float)y + 4 }, symbolSize * scaleFactor, 0, BLACK);
             } else {
                 DrawText(sym.ch.c_str(), padding + 15, y + 4, (int)symbolSize, BLACK);
             }
             
-            DrawTextEx(uiFont, displayName.c_str(), { 120, (float)y + 12 }, 22, 0, isSelected ? DARKBLUE : DARKGRAY);
-            DrawTextEx(uiFont, sym.hex.c_str(), { (float)screenWidth - 150, (float)y + 12 }, 22, 0, GRAY);
+            DrawTextEx(uiFont, displayName.c_str(), { 120, (float)y + 12 }, 22 * scaleFactor, 0, isSelected ? DARKBLUE : DARKGRAY);
+            DrawTextEx(uiFont, sym.hex.c_str(), { (float)screenWidth - 150, (float)y + 12 }, 22 * scaleFactor, 0, GRAY);
         }
     } 
     else 
@@ -535,7 +614,7 @@ void App::Draw() {
             float symWidth = 0;
             if (!useDefaultFont) {
                 symWidth = MeasureTextEx(customFont, sym.ch.c_str(), 30, 0).x;
-                DrawTextEx(customFont, sym.ch.c_str(), { x + (cellSize - symWidth)/2, (float)y + 15 }, 30, 0, BLACK);
+                DrawTextEx(customFont, sym.ch.c_str(), { x + (cellSize - symWidth)/2, (float)y + 15 }, 30 * scaleFactor, 0, BLACK);
             } else {
                 symWidth = (float)MeasureText(sym.ch.c_str(), 30);
                 DrawText(sym.ch.c_str(), x + (cellSize - (int)symWidth)/2, y + 15, 30, BLACK);
@@ -570,7 +649,7 @@ void App::Draw() {
         if (!useDefaultFont) {
             Vector2 symSize = MeasureTextEx(customFont, s.ch.c_str(), 60, 0);
             float symY = footerY + (footerHeight - symSize.y) / 2;
-            DrawTextEx(customFont, s.ch.c_str(), {(float)padding + 10, symY + (-40)}, 60, 0, BLACK);
+            DrawTextEx(customFont, s.ch.c_str(), {(float)padding + 10, symY + (-40)}, 60 * scaleFactor, 0, BLACK);
         } else DrawText(s.ch.c_str(), padding + 10, footerY + 40, 50, BLACK);
 
         // Info Testuali
@@ -578,7 +657,7 @@ void App::Draw() {
 
         std::string displayName = isEnglishMode ? s.name_en : s.name_it;
 
-        if (!useDefaultUiFont) DrawTextEx(uiF, displayName.c_str(), {(float)infoX, (float)footerY + 10}, 36, 0, Color{0, 60, 120, 255});
+        if (!useDefaultUiFont) DrawTextEx(uiF, displayName.c_str(), {(float)infoX, (float)footerY + 10}, 36 * scaleFactor, 0, Color{0, 60, 120, 255});
         else DrawText(displayName.c_str(), infoX, footerY + 10, 30, Color{0, 60, 120, 255});
         
         int codeY = footerY + 50;
@@ -586,9 +665,9 @@ void App::Draw() {
         // Funzione Lambda locale per disegnare le etichette delle info
         auto DrawInfoLabel = [&](const char* label, const char* val, int x, Color valCol) {
             if (!useDefaultUiFont) {
-                DrawTextEx(uiF, label, {(float)x, (float)codeY}, 26, 0, GRAY);
+                DrawTextEx(uiF, label, {(float)x, (float)codeY}, 26 * scaleFactor, 0, GRAY);
                 float labelW = MeasureTextEx(uiF, label, 26, 0).x;
-                DrawTextEx(uiF, val, {(float)x + labelW + 8, (float)codeY}, 26, 0, valCol);
+                DrawTextEx(uiF, val, {(float)x + labelW + 8, (float)codeY}, 26 * scaleFactor, 0, valCol);
             } else { DrawText(label, x, codeY, 20, GRAY); DrawText(val, x + 60, codeY, 20, valCol); }
         };
         
@@ -596,11 +675,11 @@ void App::Draw() {
         
         if (!s.latex.empty()) {
             if (!useDefaultUiFont) {
-                DrawTextEx(uiF, "LaTeX:", {(float)infoX + 160, (float)codeY}, 26, 0, MAROON);
-                DrawTextEx(uiF, s.latex.c_str(), {(float)infoX + 250, (float)codeY}, 26, 0, BLACK);
+                DrawTextEx(uiF, "LaTeX:", {(float)infoX + 160, (float)codeY}, 26 * scaleFactor, 0, MAROON);
+                DrawTextEx(uiF, s.latex.c_str(), {(float)infoX + 250, (float)codeY}, 26 * scaleFactor, 0, BLACK);
             } else { DrawText("LaTeX:", infoX + 160, codeY, 20, MAROON); DrawText(s.latex.c_str(), infoX + 250, codeY, 20, BLACK); }
         } else {
-            if (!useDefaultUiFont) DrawTextEx(uiF, "LaTeX: -", {(float)infoX + 160, (float)codeY}, 26, 0, Fade(GRAY, 0.5f));
+            if (!useDefaultUiFont) DrawTextEx(uiF, "LaTeX: -", {(float)infoX + 160, (float)codeY}, 26 * scaleFactor, 0, Fade(GRAY, 0.5f));
             else DrawText("LaTeX: -", infoX + 160, codeY, 20, Fade(GRAY, 0.5f));
         }
 
@@ -619,29 +698,32 @@ void App::Draw() {
             DrawRectangleRoundedLines({(float)x, (float)keysY, (float)kWidth, kHeight}, 0.3f, 4, DARKGRAY);
             
             Vector2 kPos = {(float)x + 10, (float)keysY + (kHeight - keyDim.y)/2};
-            DrawTextEx(uiF, key, kPos, keyTextSize, 0, BLACK);
+            DrawTextEx(uiF, key, kPos, keyTextSize * scaleFactor, 0, BLACK);
             
             Vector2 dPos = {(float)x + kWidth + 8, (float)keysY + (kHeight - descDim.y)/2};
-            DrawTextEx(uiF, desc, dPos, descTextSize, 0, DARKGRAY);
+            DrawTextEx(uiF, desc, dPos, descTextSize * scaleFactor, 0, DARKGRAY);
 
-            return (int)(kWidth + descDim.x + 45); 
+            return (int)(kWidth + descDim.x + 25); 
         };
 
-        keyX += DrawKeyBadge("ENTER", "Copia & Incolla", keyX); 
-        keyX += DrawKeyBadge("F1",               "HTML", keyX);
-        keyX += DrawKeyBadge("F2",              "LaTeX", keyX);
-        keyX += DrawKeyBadge("F3",              "Alt+X", keyX);
-
-        // Tasti Interazione
-        keysY = footerY + 135; 
-        keyX = infoX + (-75);
-
-        // questi tre sono stati aggiunti
+        std::string copy_str = (isEnglishMode) ? "Copy" : "Copia" ;
+        std::string copyPaste_str = (isEnglishMode) ?  "Copy & Paste" : "Copia & Incolla";
         std::string langBtn = (isEnglishMode) ? "to ITA" : "to ENG" ;
         
-        keyX += DrawKeyBadge("F5",   "Fisso", keyX);
-        keyX += DrawKeyBadge("F6",     "TRN", keyX+102);
-        keyX += DrawKeyBadge("F7",  langBtn.c_str(), keyX+114);
+        // first line button
+        keyX += DrawKeyBadge("ENTER",             copy_str.c_str(), keyX); 
+        keyX += DrawKeyBadge("CTRL + ENTER", copyPaste_str.c_str(), keyX); 
+        
+        // second line button
+        keysY = footerY + 135; 
+        keyX = infoX + (-75);
+        
+        keyX += DrawKeyBadge("F1",           "HTML", keyX);
+        keyX += DrawKeyBadge("F2",          "LaTeX", keyX);
+        keyX += DrawKeyBadge("F3",            "HEX", keyX);
+        keyX += DrawKeyBadge("F5",            "AoT", keyX);
+        keyX += DrawKeyBadge("F6",            "TRN", keyX);
+        keyX += DrawKeyBadge("F7",  langBtn.c_str(), keyX);
     }
 
     // --- 4. OVERLAY DI FEEDBACK (Animazione Copia) ---
@@ -658,7 +740,7 @@ void App::Draw() {
         DrawRectangle(cx, cy, boxW, 50, Fade(BLACK, 0.85f));
         DrawText(baseMsg, cx + 20, cy + 10, 30, WHITE);
         
-        if (!useDefaultFont) DrawTextEx(customFont, lastCopyContent.c_str(), {(float)cx + 20 + msgW, (float)cy + 10}, 30, 0, GOLD);
+        if (!useDefaultFont) DrawTextEx(customFont, lastCopyContent.c_str(), {(float)cx + 20 + msgW, (float)cy + 10}, 30 * scaleFactor, 0, GOLD);
         else DrawText(lastCopyContent.c_str(), cx + 20 + msgW, cy + 10, 30, GOLD);
     }
 

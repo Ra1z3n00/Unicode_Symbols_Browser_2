@@ -51,5 +51,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "Unicode Symbols Br
 # file(COPY "Unicode Symbols Browser.png" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 # Copia l'intera cartella risorse nella cartella dove viene creato l'eseguibile
-file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/resource" 
+file(COPY 
+    "${CMAKE_CURRENT_SOURCE_DIR}/database.csv" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/usb.png"
+    "${CMAKE_CURRENT_SOURCE_DIR}/fonts" 
      DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+

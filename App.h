@@ -20,24 +20,25 @@ private:
     void ExecuteCopy(int mode); // Handles clipboard copying (Symbol, Hex, or LaTeX)
 
     // --- Dynamic Layout Variables ---
-    const int screenWidth = 635;
-    const int screenHeight = 750;
-    const int headerHeight = 100;    // Top section height (Title, Search, Tabs)
-    const int footerHeight = 180;    // Bottom section height (Details area)
-    const int rowHeightList = 53;    // Height of each row in list view
-    const int cellSize = 60;         // Grid cell size
-    const int cellSpacing = 15;      // Space between grid cells
-    const int padding = 10;          // General margin from window borders
+    int screenWidth = 635;
+    int screenHeight = 750;
+    int headerHeight = 100;    // Top section height (Title, Search, Tabs)
+    int footerHeight = 180;    // Bottom section height (Details area)
+    int rowHeightList = 53;    // Height of each row in list view
+    int cellSize = 60;         // Grid cell size
+    int cellSpacing = 15;      // Space between grid cells
+    int padding = 10;          // General margin from window borders
     
     // --- Font Assets ---
     int cols;                        // Calculated number of columns for grid view
     int visibleLines;                // Calculated number of rows visible in the viewport
-
+    
     // --- Assets ---
     Font uiFont;                     // Main font for UI (Labels, buttons, names)
     Font customFont;                 // Specialized font for symbols (e.g., Noto Math)
     bool useDefaultFont;             // Fallback flag if customFont fails to load
     bool useDefaultUiFont;           // Fallback flag if uiFont fails to load
+    float scaleFactor;
 
     // --- Search and Filtering State ---
     char searchBuffer[256];                 // Text buffer for the search input field
