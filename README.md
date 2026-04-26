@@ -46,23 +46,6 @@ You don't need to install anything or mess with compilers to use this app.
 ---
 
 ## 🎮 Controls
-| Key / Input      | Action                                                     |
-| ---------------- | ---------------------------------------------------------- |
-| **Enter**        | Copies the actual Unicode Symbol                           |
-| **F1**           | Copies the HTML Entity code                                |
-| **F2**           | Copies the LaTeX Command                                   |
-| **F3**           | Copies the Hex Code                                        |
-| **CTRL + ENTER** | Copies and Paste the selected Symbol                       |
-| **CTRL + F1**    | Copies and Paste the selected HTML Code                    |
-| **CTRL + F2**    | Copies and Paste the selected LaTeX Code                   |
-| **CTRL + F3**    | Copies and Paste the selected Hex Code                     |
-| **F5**           | Toggle Always on Top                                       |
-| **F6**           | Toggle Application to transparent mode                     |
-| **F7**           | Change description language                                |
-| **TAB**          | Toggles between List View (Compact) and Grid View (Visual) |
-| **Backspace**    | Deletes characters from the search bar                     |
-| **Canc**         | Deletes all characters from the search bar                 |
-
 | Action                 | Key         |  CTRL + Key (AutoPaste) |
 | ---------------------- | ----------- | ----------------------- |
 | **Copy Symbol**        | `ENTER`     | `CTRL + ENTER`          |
@@ -72,10 +55,9 @@ You don't need to install anything or mess with compilers to use this app.
 | **Always on Top**      | `F5`        | -                       |
 | **Toggle Transparent** | `F6`        | -                       |
 | **Switch Language**    | `F7`        | -                       |
-| **Toggle Vies**        | `TAB`       | -                       |
+| **Toggle View**        | `TAB`       | -                       |
 | **Delete Character**   | `Backspace` | -                       |
 | **Delete All**         | `Canc`      | -                       |
-
 
 ---
 
