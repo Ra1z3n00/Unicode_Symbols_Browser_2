@@ -333,13 +333,13 @@ void App::Update() {
 void App::ExecuteCopy(int mode) {
     const auto& s = currentSymbols[selectedIndex];
     bool actionTriggered = false;
+    lastCopyAction = isEnglishMode ? "Copied: " : "Copiato: ";
 
     switch (mode) {
         case 0: // ENTER: Copia
             if(!s.ch.empty()) {
                 SetClipboardText(s.ch.c_str());
                 lastCopyContent = s.ch;
-                lastCopyAction = isEnglishMode ? "Copied: " : "Copiato: ";
                 actionTriggered = true;
             }
             break;
@@ -348,7 +348,6 @@ void App::ExecuteCopy(int mode) {
             if(!s.hex.empty()) {
                 lastCopyContent = "&#x" + s.hex + ";";
                 SetClipboardText(lastCopyContent.c_str());
-                lastCopyAction = isEnglishMode ? "Copied: " : "Copiato: ";
                 actionTriggered = true;
             } 
             break;
@@ -357,7 +356,6 @@ void App::ExecuteCopy(int mode) {
             if (!s.latex.empty()) { 
                 SetClipboardText(s.latex.c_str()); 
                 lastCopyContent = s.latex;
-                lastCopyAction = isEnglishMode ? "Copied: " : "Copiato: ";
                 actionTriggered = true; 
             }
             break;
@@ -366,7 +364,6 @@ void App::ExecuteCopy(int mode) {
             if(!s.hex.empty()) {
                 SetClipboardText(s.hex.c_str());
                 lastCopyContent = s.hex;
-                lastCopyAction = isEnglishMode ? "Copied: " : "Copiato: ";
                 actionTriggered = true;
             }
             break;
@@ -409,7 +406,7 @@ void App::ExecuteCopy(int mode) {
     }
 
     if (actionTriggered) {
-        copyFeedbackTimer = 1.5f;
+        copyFeedbackTimer = 2.0f;
     }
 }
 
@@ -729,7 +726,7 @@ void App::Draw() {
     // --- 4. OVERLAY DI FEEDBACK (Animazione Copia) ---
     if (copyFeedbackTimer > 0) {
         const char *baseMsg = lastCopyAction.c_str(); 
-        int msgW = MeasureText(baseMsg, 30);
+        int msgW = MeasureText(baseMsg, 35);
         float symW = 0;
         if (!useDefaultFont) symW = MeasureTextEx(customFont, lastCopyContent.c_str(), 30, 0).x;
         else symW = MeasureText(lastCopyContent.c_str(), 30);
