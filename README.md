@@ -29,8 +29,8 @@ Add a new line using this format:
 `Name_IT;Name_EN;HexCode;LaTeX;Category`
 
 **Example:**
-`Uguale";"Equals";"003D";"=";"Maths`
-`"Diverso";"Neq not equal";"2260";"\\neq";"Maths"`
+`Uguale";"Equals";"003D";"=";"Maths`.
+`"Diverso";"Neq not equal";"2260";"\\neq";"Maths"`.
 
 ---
 ## 📥 Quick Start (For Users)
