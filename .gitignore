@@ -1,8 +1,10 @@
 # Cartelle di compilazione CMake (FONDAMENTALE)
 build/
-build_windows/
+build_win32/
 build_linux/
 raylib/
+win32_build/
+linux_build/
 
 # File eseguibili e binari (nel caso finiscano per sbaglio fuori dalle cartelle build)
 *.exe

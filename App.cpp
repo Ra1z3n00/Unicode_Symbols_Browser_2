@@ -597,13 +597,13 @@ void App::Draw() {
             // Colori di sfondo e bordi aggiornati con l'effetto Hover
             if (isSelected) {
                 DrawRectangleRounded(cellRec, 0.2f, 8, { 200, 220, 255, 255 });
-                DrawRectangleRoundedLines(cellRec, 0.2f, 8, BLUE); 
+                DrawRectangleRoundedLines(cellRec, 0.2f, 8, 1.0f, BLUE); 
             } else if (isHovered) {
                 DrawRectangleRounded(cellRec, 0.2f, 8, { 225, 235, 255, 255 });         // Azzurrino al passaggio
-                DrawRectangleRoundedLines(cellRec, 0.2f, 8, { 150, 180, 255, 255 });    // Bordo blu chiaro
+                DrawRectangleRoundedLines(cellRec, 0.2f, 8, 1.0f, { 150, 180, 255, 255 });    // Bordo blu chiaro
             } else {
                 DrawRectangleRounded(cellRec, 0.2f, 8, WHITE);
-                DrawRectangleRoundedLines(cellRec, 0.2f, 8, LIGHTGRAY); 
+                DrawRectangleRoundedLines(cellRec, 0.2f, 8, 1.0f, LIGHTGRAY); 
             }
 
             // Disegno Simbolo
@@ -692,7 +692,7 @@ void App::Draw() {
             float kWidth = keyDim.x + 20; float kHeight = 32;
             
             DrawRectangleRounded({(float)x, (float)keysY, (float)kWidth, kHeight}, 0.3f, 4, WHITE);
-            DrawRectangleRoundedLines({(float)x, (float)keysY, (float)kWidth, kHeight}, 0.3f, 4, DARKGRAY);
+            DrawRectangleRoundedLines({(float)x, (float)keysY, (float)kWidth, kHeight}, 0.3f, 4, 1.0f, DARKGRAY);
             
             Vector2 kPos = {(float)x + 10, (float)keysY + (kHeight - keyDim.y)/2};
             DrawTextEx(uiF, key, kPos, keyTextSize * scaleFactor, 0, BLACK);
