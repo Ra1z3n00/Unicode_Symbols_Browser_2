@@ -1,5 +1,6 @@
 #include "App.h"
 #include "PlatformUtils.h"
+#include <cctype>
 #include <iostream>
 #include <algorithm>
 

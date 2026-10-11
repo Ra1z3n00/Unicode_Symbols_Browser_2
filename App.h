@@ -4,6 +4,8 @@
 #include "dataLoader.h"     // Includes Symbol struct and CSV loading functions
 #include <string>
 #include <vector>
+#include <cctype>
+#include <algorithm>
 
 class App {
 public:
